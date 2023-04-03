@@ -1,5 +1,6 @@
+use serde::Deserialize;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Deserialize)]
 pub struct Movie{
     pub id: String,
     pub title: String,
