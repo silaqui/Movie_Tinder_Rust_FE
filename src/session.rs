@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::movie::Movie;
+use crate::model::Movie;
 
 #[derive(Properties, PartialEq)]
 pub  struct  VoterProperties {

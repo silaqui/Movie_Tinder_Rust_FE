@@ -1,15 +1,18 @@
 use gloo_net::Error;
 use gloo_net::http::{Request, Response};
+use log::log;
 use yew::prelude::*;
 
-use movie::*;
+use model::*;
 use session::*;
 
-mod movie;
+mod model;
 mod session;
 
 pub struct App {
-    current: Movie,
+    session_id: Option<String>,
+    user_id: Option<String>,
+    current: Option<Movie>,
 }
 
 pub enum Msg {
@@ -21,6 +24,28 @@ pub enum Msg {
 }
 
 impl App {
+    fn start(ctx: &Context<Self>) {
+        ctx.link().send_future(async {
+            let response = Request::get("/api/start")
+                .send()
+                .await;
+
+            match &response {
+                Ok(_) => { log::info!("start request OK"); }
+                Err(e) => { log::warn!("{}", e) }
+            }
+
+            let fetched_movie: Movie =
+                response
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+
+            Msg::SetCurrent(fetched_movie)
+        });
+    }
+
     fn get_data(ctx: &Context<Self>) {
         ctx.link().send_future(async {
             let response = Request::get("/api/movie")
@@ -49,30 +74,30 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: &Context<Self>) -> Self {
+
         Self {
-            current: Movie {
-                id: "1".into(),
-                title: "Inception".into(),
-                genres: vec!["Action".into(), "Adventure".into(), "Sci-Fi".into()],
-                description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project and his team to disaster.".into(),
-                poster_url: "https://cdn.shopify.com/s/files/1/0037/8008/3782/products/inception_advance_SD18120_B_2_framed1_57a8f726-e4da-4a60-877b-95b210b8fc91-367857.jpg?v=1611688027".into(),
-            },
+            user_id: None,
+            session_id: None,
+            current: None,
         }
     }
 
     fn update(
         &mut self,
-        _ctx: &Context<Self>,
+        ctx: &Context<Self>,
         msg: Self::Message,
     ) -> bool {
         match msg {
-            Msg::Start => { false }
+            Msg::Start => {
+                App::start(&ctx);
+                false
+            }
             Msg::Skip(id) | Msg::Watch(id) => {
-                App::get_data(_ctx);
+                App::get_data(ctx);
                 false
             }
             Msg::SetCurrent(movie) => {
-                self.current = movie.clone();
+                self.current = Some(movie.clone());
                 true
             }
             Msg::Error => false,
@@ -80,7 +105,20 @@ impl Component for App {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let movie = self.current.clone();
+        let movie = self.current.clone().map(|movie| {
+            html! {
+            <Voter
+            movie = {movie}
+            on_watch = {ctx.link().callback(|movie_id| Msg::Watch(movie_id))}
+            on_skip = {ctx.link().callback(|movie_id| Msg::Skip(movie_id))}
+                />
+                }
+        });
+
+        let poster = self.current.clone().map(|movie| {
+            html! { <img src={movie.poster_url}/>
+        }
+        });
 
         html! {
 <div class="page">
@@ -88,19 +126,13 @@ impl Component for App {
         <div class="container">
             <div class="menu">
                 <h3>{"movie."}</h3>
+                <div class="button" onclick = { ctx.link().callback(|_| Msg::Watch("".into())) } > {".join"} </div>
+                <div class="button" onclick = { ctx.link().callback(|_| Msg::Start) } > {".start"} </div>
             </div>
-            <form id="form">
-                <input id="user_id" type="text" placeholder="USER"/>
-                <input id="session_id" type="text" placeholder="SESSION"/>
-            </form>
-            <Voter
-                movie = {movie.clone()}
-                on_watch = {ctx.link().callback(|movie_id| Msg::Watch(movie_id))}
-                on_skip = {ctx.link().callback(|movie_id| Msg::Skip(movie_id))}
-            />
+            {for movie}
         </div>
         <div class="poster">
-            <img src={movie.poster_url}/>
+            {for poster}
         </div>
     </div>
 </div>

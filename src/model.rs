@@ -8,3 +8,9 @@ pub struct Movie{
     pub description: String,
     pub poster_url: String
 }
+
+#[derive(Clone, PartialEq, Deserialize)]
+pub struct NewSession{
+    pub user_id: String,
+    pub session_id: String,
+}
