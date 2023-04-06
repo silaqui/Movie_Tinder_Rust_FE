@@ -1,30 +1,32 @@
-use gloo_net::Error;
-use gloo_net::http::{Request, Response};
-use log::log;
+use gloo_net::http::Request;
+use serde::Serialize;
 use yew::prelude::*;
-
+use serde_json::{Result, Value};
 use model::*;
 use session::*;
 
 mod model;
 mod session;
 
+#[derive(Clone)]
 pub struct App {
     session_id: Option<String>,
-    user_id: Option<String>,
     current: Option<Movie>,
 }
 
 pub enum Msg {
     Start,
+    Join,
     Watch(String),
     Skip(String),
     SetCurrent(Movie),
+    UpdateState(App),
     Error,
+    Nothing,
 }
 
 impl App {
-    fn start(ctx: &Context<Self>) {
+    fn start(&mut self, ctx: &Context<Self>) {
         ctx.link().send_future(async {
             let response = Request::get("/api/start")
                 .send()
@@ -35,20 +37,52 @@ impl App {
                 Err(e) => { log::warn!("{}", e) }
             }
 
-            let fetched_movie: Movie =
+            let session: Session =
                 response
                     .unwrap()
                     .json()
                     .await
                     .unwrap();
 
-            Msg::SetCurrent(fetched_movie)
+            Msg::UpdateState(App {
+                session_id: Some(session.session_id),
+                current: Some(session.movie),
+            })
         });
     }
 
-    fn get_data(ctx: &Context<Self>) {
+    fn print_an_address() -> String{
+        // Some data structure.
+        let address = Vote {
+            result: "10 Downing Street".to_owned(),
+            movie_id: "London".to_owned(),
+        };
+
+        // Serialize it to a JSON string.
+      serde_json::to_string(&address).unwrap()
+    }
+
+    fn vote_watch(&mut self, ctx: &Context<Self>, movie_id: &String) {
+        let session_id =  self.session_id.clone().unwrap();
+        let movie_id =  movie_id.clone();
+
         ctx.link().send_future(async {
-            let response = Request::get("/api/movie")
+            let session_id = session_id;
+            let movie_id = movie_id;
+
+            let url = "/api/vote/1";
+
+
+            let vote = Vote {
+                result: String::from("true").to_owned(),
+                movie_id :  movie_id.clone(),
+            };
+
+            let v = serde_json::to_string(&vote).unwrap();
+
+            let response = Request::post(url)
+                .header("Content-Type", "application/json")
+                .body(v)
                 .send()
                 .await;
 
@@ -57,15 +91,19 @@ impl App {
                 Err(e) => { println!("{}", e) }
             }
 
-            let fetched_movie: Movie =
+            let vote_result: VoteResult =
                 response
                     .unwrap()
                     .json()
                     .await
                     .unwrap();
 
-            Msg::SetCurrent(fetched_movie)
+            Msg::SetCurrent(vote_result.movie.clone())
         });
+    }
+
+    fn vote_skip(&mut self, ctx: &Context<Self>, movie_id: &String) {
+        App::vote_watch(self, ctx, movie_id)
     }
 }
 
@@ -74,9 +112,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: &Context<Self>) -> Self {
-
         Self {
-            user_id: None,
             session_id: None,
             current: None,
         }
@@ -89,17 +125,37 @@ impl Component for App {
     ) -> bool {
         match msg {
             Msg::Start => {
-                App::start(&ctx);
+                log::info!("Start");
+                App::start(self, &ctx);
+                true
+            }
+            Msg::Join => {
+                log::info!("Start");
+                App::start(self, &ctx);
                 false
             }
-            Msg::Skip(id) | Msg::Watch(id) => {
-                App::get_data(ctx);
+            Msg::Skip(id) => {
+                log::info!("Skip");
+                App::vote_skip(self, ctx, &id);
+                false
+            }
+            Msg::Watch(id) => {
+                log::info!("Watch");
+                App::vote_watch(self, ctx, &id);
                 false
             }
             Msg::SetCurrent(movie) => {
+                log::info!("SetCurrent");
                 self.current = Some(movie.clone());
                 true
             }
+            Msg::UpdateState(state) => {
+                log::info!("UpdateState");
+                self.session_id = state.session_id.clone();
+                self.current = state.current.clone();
+                true
+            }
+            Msg::Nothing => false,
             Msg::Error => false,
         }
     }
@@ -126,7 +182,7 @@ impl Component for App {
         <div class="container">
             <div class="menu">
                 <h3>{"movie."}</h3>
-                <div class="button" onclick = { ctx.link().callback(|_| Msg::Watch("".into())) } > {".join"} </div>
+                <div class="button" onclick = { ctx.link().callback(|_| Msg::Join) } > {".join"} </div>
                 <div class="button" onclick = { ctx.link().callback(|_| Msg::Start) } > {".start"} </div>
             </div>
             {for movie}

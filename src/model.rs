@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Clone, PartialEq, Deserialize)]
 pub struct Movie{
@@ -9,8 +10,21 @@ pub struct Movie{
     pub poster_url: String
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Vote{
+    pub result : String,
+    pub movie_id : String,
+}
+
 #[derive(Clone, PartialEq, Deserialize)]
-pub struct NewSession{
-    pub user_id: String,
-    pub session_id: String,
+pub struct VoteResult{
+    pub is_match: bool,
+    pub movie: Movie,
+}
+
+#[derive(Clone, PartialEq, Deserialize)]
+pub struct Session {
+    pub session_id : String,
+    pub is_match: bool,
+    pub movie: Movie,
 }

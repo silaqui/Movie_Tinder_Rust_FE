@@ -9,5 +9,6 @@ edition = "2021"
 yew= "0.19.3"
 gloo-net = "0.2.4"
 serde = { version = "1.0.147", features = ["derive"] }
+serde_json = "1.0.95"
 wasm-logger = "0.2.0"
 log = "0.4.6"
