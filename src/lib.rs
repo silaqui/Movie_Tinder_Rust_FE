@@ -1,7 +1,6 @@
 use gloo_net::http::Request;
-use serde::Serialize;
 use yew::prelude::*;
-use serde_json::{Result, Value};
+
 use model::*;
 use session::*;
 
@@ -28,17 +27,10 @@ pub enum Msg {
 impl App {
     fn start(&mut self, ctx: &Context<Self>) {
         ctx.link().send_future(async {
-            let response = Request::get("/api/start")
-                .send()
-                .await;
-
-            match &response {
-                Ok(_) => { log::info!("start request OK"); }
-                Err(e) => { log::warn!("{}", e) }
-            }
-
             let session: Session =
-                response
+                Request::get("/api/start")
+                    .send()
+                    .await
                     .unwrap()
                     .json()
                     .await
@@ -51,59 +43,45 @@ impl App {
         });
     }
 
-    fn print_an_address() -> String{
-        // Some data structure.
-        let address = Vote {
-            result: "10 Downing Street".to_owned(),
-            movie_id: "London".to_owned(),
-        };
-
-        // Serialize it to a JSON string.
-      serde_json::to_string(&address).unwrap()
-    }
-
     fn vote_watch(&mut self, ctx: &Context<Self>, movie_id: &String) {
-        let session_id =  self.session_id.clone().unwrap();
-        let movie_id =  movie_id.clone();
-
-        ctx.link().send_future(async {
-            let session_id = session_id;
-            let movie_id = movie_id;
-
-            let url = "/api/vote/1";
-
-
-            let vote = Vote {
-                result: String::from("true").to_owned(),
-                movie_id :  movie_id.clone(),
-            };
-
-            let v = serde_json::to_string(&vote).unwrap();
-
-            let response = Request::post(url)
-                .header("Content-Type", "application/json")
-                .body(v)
-                .send()
-                .await;
-
-            match &response {
-                Ok(_) => { println!("OK") }
-                Err(e) => { println!("{}", e) }
-            }
-
-            let vote_result: VoteResult =
-                response
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
-
-            Msg::SetCurrent(vote_result.movie.clone())
-        });
+        self.vote( ctx, &movie_id, false)
     }
 
     fn vote_skip(&mut self, ctx: &Context<Self>, movie_id: &String) {
-        App::vote_watch(self, ctx, movie_id)
+        self.vote( ctx, &movie_id, false)
+    }
+
+    fn vote(&mut self, ctx: &Context<Self>, movie_id: &String, result: bool) {
+        {
+            let movie_id = movie_id.clone();
+            let result = result.to_string().clone();
+            let session_id = self.session_id.clone().unwrap();
+
+            ctx.link().send_future(async {
+                let mut url = "/api/vote/".to_string();
+                let session_id = session_id;
+
+                url.push_str(session_id.as_str());
+
+                let vote_json = serde_json::to_string(&Vote {
+                    result,
+                    movie_id,
+                }).unwrap();
+
+                let vote_result: VoteResult =
+                    Request::post(url.as_str())
+                        .header("Content-Type", "application/json")
+                        .body(vote_json)
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+
+                Msg::SetCurrent(vote_result.movie.clone())
+            });
+        }
     }
 }
 
