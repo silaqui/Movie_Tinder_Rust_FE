@@ -27,7 +27,7 @@ pub enum Msg {
 impl App {
     fn start(&mut self, ctx: &Context<Self>) {
         ctx.link().send_future(async {
-            let session: Session =
+            let session: NextMovie =
                 Request::get("/api/start")
                     .send()
                     .await
@@ -43,18 +43,35 @@ impl App {
         });
     }
 
+    fn join(&mut self, ctx: &Context<Self>) {
+        ctx.link().send_future(async {
+            let session: NextMovie =
+                Request::get("/api/join/1")
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+
+            Msg::UpdateState(App {
+                session_id: Some(session.session_id),
+                current: Some(session.movie),
+            })
+        });
+    }
+
     fn vote_watch(&mut self, ctx: &Context<Self>, movie_id: &String) {
-        self.vote( ctx, &movie_id, false)
+        self.vote(ctx, &movie_id, VoteResult::WATCH)
     }
 
     fn vote_skip(&mut self, ctx: &Context<Self>, movie_id: &String) {
-        self.vote( ctx, &movie_id, false)
+        self.vote(ctx, &movie_id, VoteResult::SKIP)
     }
 
-    fn vote(&mut self, ctx: &Context<Self>, movie_id: &String, result: bool) {
+    fn vote(&mut self, ctx: &Context<Self>, movie_id: &String, result: VoteResult) {
         {
             let movie_id = movie_id.clone();
-            let result = result.to_string().clone();
             let session_id = self.session_id.clone().unwrap();
 
             ctx.link().send_future(async {
@@ -68,7 +85,7 @@ impl App {
                     movie_id,
                 }).unwrap();
 
-                let vote_result: VoteResult =
+                let vote_result: NextMovie =
                     Request::post(url.as_str())
                         .header("Content-Type", "application/json")
                         .body(vote_json)
@@ -109,7 +126,7 @@ impl Component for App {
             }
             Msg::Join => {
                 log::info!("Start");
-                App::start(self, &ctx);
+                App::join(self, &ctx);
                 false
             }
             Msg::Skip(id) => {
