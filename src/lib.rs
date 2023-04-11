@@ -1,4 +1,6 @@
 use gloo_net::http::Request;
+use log::log;
+use web_sys::{Event, HtmlInputElement, InputEvent};
 use yew::prelude::*;
 
 use model::*;
@@ -10,7 +12,8 @@ mod session;
 #[derive(Clone)]
 pub struct App {
     session_id: Option<String>,
-    current: Option<Movie>,
+    current_vote: Option<Movie>,
+    session_match: Option<Movie>,
 }
 
 pub enum Msg {
@@ -18,6 +21,7 @@ pub enum Msg {
     Join,
     Watch(String),
     Skip(String),
+    SetSessionId(String),
     SetCurrent(Option<Movie>),
     UpdateState(App),
     Error,
@@ -38,15 +42,21 @@ impl App {
 
             Msg::UpdateState(App {
                 session_id: Some(session.session_id),
-                current: session.next_movie,
+                current_vote: session.next_movie,
+                session_match: None,
             })
         });
     }
 
     fn join(&mut self, ctx: &Context<Self>) {
+        let session_id = self.session_id.clone().unwrap_or_else(|| { "1".to_string() });
+
+        let url = format!("/api/join/{}", session_id);
+
         ctx.link().send_future(async {
+            let url = url;
             let session: SessionStateDTO =
-                Request::get("/api/join/1")
+                Request::get(url.as_str())
                     .send()
                     .await
                     .unwrap()
@@ -56,7 +66,8 @@ impl App {
 
             Msg::UpdateState(App {
                 session_id: Some(session.session_id),
-                current: session.next_movie,
+                current_vote: session.next_movie,
+                session_match: session.match_movie,
             })
         });
     }
@@ -96,7 +107,11 @@ impl App {
                         .await
                         .unwrap();
 
-                Msg::SetCurrent(vote_result.next_movie.clone())
+                Msg::UpdateState(App {
+                    session_id: Some(vote_result.session_id),
+                    current_vote: vote_result.next_movie,
+                    session_match: vote_result.match_movie,
+                })
             });
         }
     }
@@ -109,7 +124,8 @@ impl Component for App {
     fn create(_: &Context<Self>) -> Self {
         Self {
             session_id: None,
-            current: None,
+            current_vote: None,
+            session_match: None,
         }
     }
 
@@ -141,13 +157,19 @@ impl Component for App {
             }
             Msg::SetCurrent(movie) => {
                 log::info!("SetCurrent");
-                self.current = movie.clone();
+                self.current_vote = movie.clone();
+                true
+            }
+            Msg::SetSessionId(id) => {
+                log::info!("SetSessionId");
+                self.session_id = Some(id.clone());
                 true
             }
             Msg::UpdateState(state) => {
                 log::info!("UpdateState");
                 self.session_id = state.session_id.clone();
-                self.current = state.current.clone();
+                self.current_vote = state.current_vote.clone();
+                self.session_match = state.session_match.clone();
                 true
             }
             Msg::Nothing => false,
@@ -156,7 +178,7 @@ impl Component for App {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let movie = self.current.clone().map(|movie| {
+        let movie = self.current_vote.clone().map(|movie| {
             html! {
             <Voter
             movie = {movie}
@@ -166,7 +188,16 @@ impl Component for App {
                 }
         });
 
-        let poster = self.current.clone().map(|movie| {
+        let session_match = self.session_match.clone().map(|movie| {
+            html! {
+                <>
+                    <div> {"Match : "} { movie.title } </div>
+                    <img src={movie.poster_url}/>
+                </>
+            }
+        });
+
+        let poster = self.current_vote.clone().map(|movie| {
             html! { <img src={movie.poster_url}/>
         }
         });
@@ -177,6 +208,8 @@ impl Component for App {
         <div class="container">
             <div class="menu">
                 <h3>{"movie."}</h3>
+                <input id="session_id" type="text" placeholder="SESSION ID"
+                        value={self.session_id.clone().unwrap_or_else(|| "".to_string())}/>
                 <div class="button" onclick = { ctx.link().callback(|_| Msg::Join) } > {".join"} </div>
                 <div class="button" onclick = { ctx.link().callback(|_| Msg::Start) } > {".start"} </div>
             </div>
@@ -185,6 +218,10 @@ impl Component for App {
         <div class="poster">
             {for poster}
         </div>
+        <div class="result">
+            {for session_match}
+        </div>
+
     </div>
 </div>
         }

@@ -12,3 +12,4 @@ serde = { version = "1.0.147", features = ["derive"] }
 serde_json = "1.0.95"
 wasm-logger = "0.2.0"
 log = "0.4.6"
+web-sys = "0.3"
