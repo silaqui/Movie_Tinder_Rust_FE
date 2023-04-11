@@ -1,13 +1,14 @@
 use gloo_net::http::Request;
-use log::log;
-use web_sys::{Event, HtmlInputElement, InputEvent};
+use web_sys::{HtmlInputElement, InputEvent};
 use yew::prelude::*;
 
 use model::*;
 use session::*;
+use session_id::*;
 
 mod model;
 mod session;
+mod session_id;
 
 #[derive(Clone)]
 pub struct App {
@@ -208,8 +209,10 @@ impl Component for App {
         <div class="container">
             <div class="menu">
                 <h3>{"movie."}</h3>
-                <input id="session_id" type="text" placeholder="SESSION ID"
-                        value={self.session_id.clone().unwrap_or_else(|| "".to_string())}/>
+                <SessionId
+            on_change = {ctx.link().callback(|movie_id| Msg::SetSessionId(movie_id))}
+            value = {self.session_id.clone().unwrap_or_else(|| "".to_string())}
+            />
                 <div class="button" onclick = { ctx.link().callback(|_| Msg::Join) } > {".join"} </div>
                 <div class="button" onclick = { ctx.link().callback(|_| Msg::Start) } > {".start"} </div>
             </div>
