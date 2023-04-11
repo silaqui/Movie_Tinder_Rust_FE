@@ -10,21 +10,21 @@ pub struct Movie {
     pub poster_url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NextMovie {
-    pub session_id: String,
-    pub is_match: bool,
-    pub movie: Movie,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Vote {
-    pub result: VoteResult,
-    pub movie_id: String,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum VoteResult {
     WATCH,
     SKIP,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VoteDTO {
+    pub result: VoteResult,
+    pub movie_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionStateDTO {
+    pub session_id: String,
+    pub match_movie: Option<Movie>,
+    pub next_movie: Option<Movie>,
 }

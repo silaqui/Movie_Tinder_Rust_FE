@@ -18,7 +18,7 @@ pub enum Msg {
     Join,
     Watch(String),
     Skip(String),
-    SetCurrent(Movie),
+    SetCurrent(Option<Movie>),
     UpdateState(App),
     Error,
     Nothing,
@@ -27,7 +27,7 @@ pub enum Msg {
 impl App {
     fn start(&mut self, ctx: &Context<Self>) {
         ctx.link().send_future(async {
-            let session: NextMovie =
+            let session: SessionStateDTO =
                 Request::get("/api/start")
                     .send()
                     .await
@@ -38,14 +38,14 @@ impl App {
 
             Msg::UpdateState(App {
                 session_id: Some(session.session_id),
-                current: Some(session.movie),
+                current: session.next_movie,
             })
         });
     }
 
     fn join(&mut self, ctx: &Context<Self>) {
         ctx.link().send_future(async {
-            let session: NextMovie =
+            let session: SessionStateDTO =
                 Request::get("/api/join/1")
                     .send()
                     .await
@@ -56,7 +56,7 @@ impl App {
 
             Msg::UpdateState(App {
                 session_id: Some(session.session_id),
-                current: Some(session.movie),
+                current: session.next_movie,
             })
         });
     }
@@ -80,12 +80,12 @@ impl App {
 
                 url.push_str(session_id.as_str());
 
-                let vote_json = serde_json::to_string(&Vote {
+                let vote_json = serde_json::to_string(&VoteDTO {
                     result,
                     movie_id,
                 }).unwrap();
 
-                let vote_result: NextMovie =
+                let vote_result: SessionStateDTO =
                     Request::post(url.as_str())
                         .header("Content-Type", "application/json")
                         .body(vote_json)
@@ -96,7 +96,7 @@ impl App {
                         .await
                         .unwrap();
 
-                Msg::SetCurrent(vote_result.movie.clone())
+                Msg::SetCurrent(vote_result.next_movie.clone())
             });
         }
     }
@@ -141,7 +141,7 @@ impl Component for App {
             }
             Msg::SetCurrent(movie) => {
                 log::info!("SetCurrent");
-                self.current = Some(movie.clone());
+                self.current = movie.clone();
                 true
             }
             Msg::UpdateState(state) => {

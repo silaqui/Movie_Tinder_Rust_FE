@@ -5,14 +5,14 @@
         <title>Title</title>
         <link rel="stylesheet" href="/style-9187c3b820c255a.css">
 
-        <link rel="preload" href="/rust_front_sandbox-a41d21d0dd6d20e9_bg.wasm" as="fetch" type="application/wasm"
+        <link rel="preload" href="/rust_front_sandbox-63d97e448fcdc19e_bg.wasm" as="fetch" type="application/wasm"
               crossorigin="">
-        <link rel="modulepreload" href="/rust_front_sandbox-a41d21d0dd6d20e9.js">
+        <link rel="modulepreload" href="/rust_front_sandbox-63d97e448fcdc19e.js">
 </head>
 <body>
-<script type="module">import init from '/rust_front_sandbox-a41d21d0dd6d20e9.js';
+<script type="module">import init from '/rust_front_sandbox-63d97e448fcdc19e.js';
 
-init('/rust_front_sandbox-a41d21d0dd6d20e9_bg.wasm');</script>
+init('/rust_front_sandbox-63d97e448fcdc19e_bg.wasm');</script>
 <script>(function () {
         var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         var url = protocol + '//' + window.location.host + '/_trunk/ws';
@@ -34,10 +34,10 @@ init('/rust_front_sandbox-a41d21d0dd6d20e9_bg.wasm');</script>
         var ws = new WebSocket(url);
         ws.onmessage = (ev) => {
                 const msg = JSON.parse(ev.data);
-        if (msg.reload) {
-            window.location.reload();
-        }
-    };
-    ws.onclose = reload_upon_connect;
+                if (msg.reload) {
+                        window.location.reload();
+                }
+        };
+        ws.onclose = reload_upon_connect;
 })()
 </script></body></html>
