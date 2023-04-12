@@ -1,14 +1,13 @@
 use gloo_net::http::Request;
-use web_sys::{HtmlInputElement, InputEvent};
 use yew::prelude::*;
 
 use model::*;
-use session::*;
-use session_id::*;
+use session_id_input::*;
+use voter::*;
 
 mod model;
-mod session;
-mod session_id;
+mod voter;
+mod session_id_input;
 
 #[derive(Clone)]
 pub struct App {
