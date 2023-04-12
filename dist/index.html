@@ -1,21 +1,28 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html><html>
+<head>
         <meta charset="UTF-8">
         <title>Title</title>
         <link rel="stylesheet" href="/style-3b59dd1156559a88.css">
-    
-<link rel="preload" href="/rust_front_sandbox-f591254c85711c9b_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-<link rel="modulepreload" href="/rust_front_sandbox-f591254c85711c9b.js"></head>
-<body><script type="module">import init from '/rust_front_sandbox-f591254c85711c9b.js';init('/rust_front_sandbox-f591254c85711c9b_bg.wasm');</script><script>(function () {
-    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    var url = protocol + '//' + window.location.host + '/_trunk/ws';
-    var poll_interval = 5000;
-    var reload_upon_connect = () => {
-        window.setTimeout(
-            () => {
-                // when we successfully reconnect, we'll force a
-                // reload (since we presumably lost connection to
-                // trunk due to it being killed, so it will have
-                // rebuilt on restart)
+
+        <link rel="preload" href="/rust_front_sandbox-1e34c0fe0369cddd_bg.wasm" as="fetch" type="application/wasm"
+              crossorigin="">
+        <link rel="modulepreload" href="/rust_front_sandbox-1e34c0fe0369cddd.js">
+</head>
+<body>
+<script type="module">import init from '/rust_front_sandbox-1e34c0fe0369cddd.js';
+
+init('/rust_front_sandbox-1e34c0fe0369cddd_bg.wasm');</script>
+<script>(function () {
+        var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        var url = protocol + '//' + window.location.host + '/_trunk/ws';
+        var poll_interval = 5000;
+        var reload_upon_connect = () => {
+                window.setTimeout(
+                        () => {
+                                // when we successfully reconnect, we'll force a
+                                // reload (since we presumably lost connection to
+                                // trunk due to it being killed, so it will have
+                                // rebuilt on restart)
                 var ws = new WebSocket(url);
                 ws.onopen = () => window.location.reload();
                 ws.onclose = reload_upon_connect;

@@ -24,7 +24,7 @@ pub struct VoteDTO {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionStateDTO {
-    pub session_id: String,
+    pub session_id: Option<usize>,
     pub match_movie: Option<Movie>,
     pub next_movie: Option<Movie>,
 }

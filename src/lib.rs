@@ -1,4 +1,5 @@
 use gloo_net::http::Request;
+use serde_json::to_string;
 use yew::prelude::*;
 
 use model::*;
@@ -41,7 +42,7 @@ impl App {
                     .unwrap();
 
             Msg::UpdateState(App {
-                session_id: Some(session.session_id),
+                session_id: session.session_id.map(|i| i.to_string()),
                 current_vote: session.next_movie,
                 session_match: None,
             })
@@ -65,7 +66,7 @@ impl App {
                     .unwrap();
 
             Msg::UpdateState(App {
-                session_id: Some(session.session_id),
+                session_id: session.session_id.map(|i| i.to_string()),
                 current_vote: session.next_movie,
                 session_match: session.match_movie,
             })
@@ -108,7 +109,7 @@ impl App {
                         .unwrap();
 
                 Msg::UpdateState(App {
-                    session_id: Some(vote_result.session_id),
+                    session_id: vote_result.session_id.map(|i| i.to_string()),
                     current_vote: vote_result.next_movie,
                     session_match: vote_result.match_movie,
                 })
